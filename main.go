@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"time"
 
 	"auto_coffeeshop/coffeeshop"
@@ -11,16 +12,17 @@ func main() {
 
 	go coffeeShop.StartService()
 
-	// Simulate order
-	// You can continue adding orders here as needed
-	// For an infinite loop, you can keep adding orders
+	// Simulate order with random coffee types
+	coffeeTypes := []string{"Espresso", "Latte", "Cappuccino"} // Add more coffee types as needed
+
 	for {
-		coffeeShop.Orders <- "Espresso"
+		// Generate a random index within the coffeeTypes slice length
+		randomIndex := rand.Intn(len(coffeeTypes))
+
+		// Select a random coffee type using the generated index
+		selectedCoffee := coffeeTypes[randomIndex]
+
+		coffeeShop.Orders <- selectedCoffee
 		time.Sleep(1 * time.Minute) // Wait before placing another order
-		// select {
-		// case <-coffeeShop.Completed:
-		// 	fmt.Println("Waiting...")
-		// 	time.Sleep(1 * time.Minute) // Wait before placing another order
-		// }
 	}
 }
