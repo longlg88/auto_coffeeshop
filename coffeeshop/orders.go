@@ -2,35 +2,51 @@ package coffeeshop
 
 import (
 	"auto_coffeeshop/person"
+	"auto_coffeeshop/utils"
 	"fmt"
 	"time"
 )
 
-func (cs *CoffeeShop) takeOrder(order string, person *person.Person) {
-	if order == "Espresso" {
-		fmt.Printf("> %s is received the order now\n", person.Name)
-		go func() {
-			fmt.Println("> Starting making coffee for Espresso")
-			time.Sleep(2 * time.Second) // Simulate taking the order
-			cs.makeCoffee(order)
-			cs.Completed <- order
-		}()
-	} else {
-		fmt.Println("Sorry, we don't have that in our menu.")
-		cs.Completed <- "Error: Invalid Order"
+// Orders struct manages the orders in the coffee shop
+type Orders struct {
+	Recipe   CoffeeRecipe
+	Complete chan bool
+}
+
+// NewOrder initializes a new coffee order with the given recipe
+func NewOrder(recipe CoffeeRecipe) *Orders {
+	return &Orders{
+		Recipe:   recipe,
+		Complete: make(chan bool),
 	}
 }
 
-func (cs *CoffeeShop) makeCoffee(order string) {
-	fmt.Println(">> Grinding coffee beans...")
-	time.Sleep(2 * time.Second)
+func (cs *CoffeeShop) takeOrder(order string, person *person.Person) {
+	coffee, exists := cs.Menu[order]
 
-	fmt.Println(">> Putting ground coffee in the filter...")
-	time.Sleep(1 * time.Second)
+	if !exists {
+		fmt.Printf("Sorry, we don't have %s in our menu.\n", order)
+		fmt.Println("### End time: ", time.Now().In(utils.Loc).Format("2006-01-02 3:04:05 PM KST"))
+		fmt.Println("Waiting...")
+		return
+	}
 
-	fmt.Println(">> Extracting espresso...")
-	time.Sleep(25 * time.Second)
+	recipe, err := GetCoffeeRecipe(order)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return
+	}
 
-	fmt.Println(">> Mixing espresso with water...")
-	time.Sleep(5 * time.Second)
+	fmt.Printf("> %s is received the order now\n", person.Name)
+
+	go func() {
+		fmt.Printf("> Starting making coffee for %s\n", coffee.Name)
+		time.Sleep(2 * time.Second) // Simulate taking the order
+		if err := recipe.MakeCoffee(); err != nil {
+			fmt.Println("Error making coffee: ", err)
+			cs.Completed <- "Error: Invalid Order"
+			return
+		}
+		cs.Completed <- order
+	}()
 }

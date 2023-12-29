@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"auto_coffeeshop/person"
+	"auto_coffeeshop/utils"
 )
 
 type Coffee struct {
@@ -33,24 +34,24 @@ func NewCoffeeShop() *CoffeeShop {
 	}
 }
 
-func (cs *CoffeeShop) StartService() {
-	loc, err := time.LoadLocation("Asia/Seoul")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
+func (cs *CoffeeShop) handleCompletedOrders() {
+	for completedOrder := range cs.Completed {
+		fmt.Printf("> Completed order. Here is your %s! Enjoy!\n", completedOrder)
+		fmt.Println("### End time: ", time.Now().In(utils.Loc).Format("2006-01-02 3:04:05 PM KST"))
+		fmt.Println("Waiting...")
 	}
+}
+
+func (cs *CoffeeShop) StartService() {
+	go cs.handleCompletedOrders() // Launch goroutine to handle completed orders
 
 	employee := &person.Person{Name: "Reacher"}
 
 	for {
 		select {
 		case order := <-cs.Orders:
-			fmt.Println("### Start time: ", time.Now().In(loc).Format("2006-01-02 3:04:05 PM KST"))
+			fmt.Println("### Start time: ", time.Now().In(utils.Loc).Format("2006-01-02 3:04:05 PM KST"))
 			cs.takeOrder(order, employee)
-		case completedOrder := <-cs.Completed:
-			fmt.Printf("> Completed order. Here is your %s! Enjoy!\n", completedOrder)
-			fmt.Println("### End time: ", time.Now().In(loc).Format("2006-01-02 3:04:05 PM KST"))
-			fmt.Println("Waiting...")
 		}
 	}
 }
